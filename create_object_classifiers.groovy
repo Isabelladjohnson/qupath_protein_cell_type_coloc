@@ -1,4 +1,3 @@
-import com.google.gson.GsonBuilder
 import java.nio.file.Files
 
 def project = getProject()
@@ -11,51 +10,91 @@ if (project == null) {
 def classifiersDir = project.getPath().getParent()
     .resolve('classifiers')
     .resolve('object_classifiers')
+    .toFile()
 
-if (!classifiersDir.toFile().exists()) {
-    classifiersDir.toFile().mkdirs()
+if (!classifiersDir.exists()) {
+    classifiersDir.mkdirs()
     print('Created classifiers directory.')
 }
 
-// Step 1: Create 63 single measurement classifier JSON
-def classifier63 = '''{
-  "object_filter": "DETECTION",
-  "measurement_filter": null,
-  "training_class": null,
-  "threshold_measurement": "Cell: 63 mean",
-  "below_class": "Unclassified",
-  "above_class": "63",
-  "threshold": 175.0,
-  "channel_filter": "63"
+// Step 1: Create 63 single measurement classifier
+def json63 = '''{
+  "object_classifier_type": "SimpleClassifier",
+  "function": {
+    "classifier_fun": "ClassifyByMeasurementFunction",
+    "measurement": "Cell: 63 mean",
+    "pathClassEquals": "63",
+    "pathClassAbove": "63",
+    "threshold": 175.0
+  },
+  "pathClasses": [
+    "63"
+  ],
+  "filter": "DETECTIONS_ALL",
+  "timestamp": ''' + System.currentTimeMillis() + '''
 }'''
 
-def path63 = classifiersDir.resolve('63.json')
-Files.writeString(path63, classifier63)
+new File(classifiersDir, '63.json').text = json63
 print('Created classifier: 63')
 
-// Step 2: Create iba1 single measurement classifier JSON
-def classifierIba1 = '''{
-  "object_filter": "DETECTION",
-  "measurement_filter": null,
-  "training_class": null,
-  "threshold_measurement": "Cell: iba1 mean",
-  "below_class": "Unclassified",
-  "above_class": "iba1",
-  "threshold": 550.0,
-  "channel_filter": "iba1"
+// Step 2: Create iba1 single measurement classifier
+def jsonIba1 = '''{
+  "object_classifier_type": "SimpleClassifier",
+  "function": {
+    "classifier_fun": "ClassifyByMeasurementFunction",
+    "measurement": "Cell: iba1 mean",
+    "pathClassEquals": "iba1",
+    "pathClassAbove": "iba1",
+    "threshold": 550.0
+  },
+  "pathClasses": [
+    "iba1"
+  ],
+  "filter": "DETECTIONS_ALL",
+  "timestamp": ''' + System.currentTimeMillis() + '''
 }'''
 
-def pathIba1 = classifiersDir.resolve('iba1.json')
-Files.writeString(pathIba1, classifierIba1)
+new File(classifiersDir, 'iba1.json').text = jsonIba1
 print('Created classifier: iba1')
 
-// Step 3: Create composite classifier JSON
-def classifierColoc = '''{
-  "classifiers": ["63", "iba1"]
+// Step 3: Create composite classifier (coloc = 63 AND iba1)
+def jsonColoc = '''{
+  "object_classifier_type": "CompositeClassifier",
+  "classifiers": [
+    {
+      "object_classifier_type": "SimpleClassifier",
+      "function": {
+        "classifier_fun": "ClassifyByMeasurementFunction",
+        "measurement": "Cell: 63 mean",
+        "pathClassEquals": "63",
+        "pathClassAbove": "63",
+        "threshold": 175.0
+      },
+      "pathClasses": [
+        "63"
+      ],
+      "filter": "DETECTIONS_ALL",
+      "timestamp": ''' + System.currentTimeMillis() + '''
+    },
+    {
+      "object_classifier_type": "SimpleClassifier",
+      "function": {
+        "classifier_fun": "ClassifyByMeasurementFunction",
+        "measurement": "Cell: iba1 mean",
+        "pathClassEquals": "iba1",
+        "pathClassAbove": "iba1",
+        "threshold": 550.0
+      },
+      "pathClasses": [
+        "iba1"
+      ],
+      "filter": "DETECTIONS_ALL",
+      "timestamp": ''' + System.currentTimeMillis() + '''
+    }
+  ]
 }'''
 
-def pathColoc = classifiersDir.resolve('coloc.json')
-Files.writeString(pathColoc, classifierColoc)
+new File(classifiersDir, 'coloc.json').text = jsonColoc
 print('Created classifier: coloc')
 
 print('Done! All classifiers saved to project.')
