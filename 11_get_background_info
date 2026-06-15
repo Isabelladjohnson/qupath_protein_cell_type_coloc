@@ -1,0 +1,122 @@
+def project = getProject()
+if (project == null) {
+    print('ERROR: No project is open.')
+    return
+}
+
+def outputDir = new File(project.getPath().getParent().toFile(), 'results')
+if (!outputDir.exists()) {
+    outputDir.mkdirs()
+    print('Created results directory: ' + outputDir)
+}
+
+def projectEntries = project.getImageList()
+print('Found ' + projectEntries.size() + ' image(s) in project.')
+
+def csvFile = new File(outputDir, 'background_intensity.csv')
+csvFile.withWriter { writer ->
+
+    writer.writeLine('Image,Group,Background 63 Mean,Background 63 Min,Background 63 Max')
+
+    for (def entry : projectEntries) {
+        print('Processing: ' + entry.getImageName())
+
+        def imageData = entry.readImageData()
+        if (imageData == null) {
+            print('  SKIPPED: Could not read image data.')
+            continue
+        }
+
+        def hierarchy = imageData.getHierarchy()
+        def annotations = hierarchy.getAnnotationObjects()
+
+        // Find background annotation - the one with no child objects
+        def backgroundAnnotation = annotations.find { it.nChildObjects() == 0 }
+
+        if (backgroundAnnotation == null) {
+            print('  WARNING: No background annotation found.')
+            writer.writeLine(entry.getImageName() + ',,N/A,N/A,N/A')
+            continue
+        }
+
+        def measurements = backgroundAnnotation.getMeasurementList()
+        def bgMean = measurements.get('ROI: 2.00 \u00b5m per pixel: 63: Mean')
+        def bgMin = measurements.get('ROI: 2.00 \u00b5m per pixel: 63: Min')
+        def bgMax = measurements.get('ROI: 2.00 \u00b5m per pixel: 63: Max')
+
+        if (bgMean == null || Double.isNaN(bgMean)) {
+            print('  WARNING: No background measurements found on annotation.')
+            writer.writeLine(entry.getImageName() + ',,N/A,N/A,N/A')
+            continue
+        }
+
+        def group = entry.getImageName().startsWith('NC') ? 'Control' : 'Experimental'
+
+        print('  Group: ' + group)
+        print('  Background 63 Mean: ' + String.format('%.4f', bgMean as double))
+        print('  Background 63 Min: ' + String.format('%.4f', bgMin as double))
+        print('  Background 63 Max: ' + String.format('%.4f', bgMax as double))
+
+        writer.writeLine(
+            entry.getImageName() + ',' +
+            group + ',' +
+            String.format('%.4f', bgMean as double) + ',' +
+            String.format('%.4f', bgMin as double) + ',' +
+            String.format('%.4f', bgMax as double)
+        )
+    }
+
+    // Add group averages at the bottom
+    writer.writeLine('')
+    writer.writeLine('--- Group Averages ---')
+    writer.writeLine('Measurement,Control Average,Experimental Average')
+}
+
+// Calculate and append group averages
+def allResults = []
+for (def entry : projectEntries) {
+    def imageData = entry.readImageData()
+    if (imageData == null) return
+    def annotations = imageData.getHierarchy().getAnnotationObjects()
+    def bgAnnotation = annotations.find { it.nChildObjects() == 0 }
+    if (bgAnnotation == null) return
+    def measurements = bgAnnotation.getMeasurementList()
+    def bgMean = measurements.get('ROI: 2.00 \u00b5m per pixel: 63: Mean')
+    def bgMin = measurements.get('ROI: 2.00 \u00b5m per pixel: 63: Min')
+    def bgMax = measurements.get('ROI: 2.00 \u00b5m per pixel: 63: Max')
+    if (bgMean == null || Double.isNaN(bgMean)) return
+    allResults.add([
+        isControl: entry.getImageName().startsWith('NC'),
+        bgMean: bgMean as double,
+        bgMin: bgMin as double,
+        bgMax: bgMax as double
+    ])
+}
+
+def controlResults = allResults.findAll { it.isControl }
+def experimentalResults = allResults.findAll { !it.isControl }
+
+def getAvg = { rows, key ->
+    def values = rows.collect { it[key] }.findAll { it != null }
+    return values ? (values.sum() as double) / values.size() : 0.0
+}
+
+csvFile.withWriterAppend { writer ->
+    writer.writeLine(
+        'Background 63 Mean,' +
+        String.format('%.4f', getAvg(controlResults, 'bgMean') as double) + ',' +
+        String.format('%.4f', getAvg(experimentalResults, 'bgMean') as double)
+    )
+    writer.writeLine(
+        'Background 63 Min,' +
+        String.format('%.4f', getAvg(controlResults, 'bgMin') as double) + ',' +
+        String.format('%.4f', getAvg(experimentalResults, 'bgMin') as double)
+    )
+    writer.writeLine(
+        'Background 63 Max,' +
+        String.format('%.4f', getAvg(controlResults, 'bgMax') as double) + ',' +
+        String.format('%.4f', getAvg(experimentalResults, 'bgMax') as double)
+    )
+}
+
+print('Done! Results saved to: ' + csvFile)
