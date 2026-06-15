@@ -1,0 +1,181 @@
+def project = getProject()
+if (project == null) {
+    print('ERROR: No project is open.')
+    return
+}
+
+def outputDir = new File(project.getPath().getParent().toFile(), 'results')
+if (!outputDir.exists()) {
+    outputDir.mkdirs()
+    print('Created results directory: ' + outputDir)
+}
+
+def projectEntries = project.getImageList()
+print('Found ' + projectEntries.size() + ' image(s) in project.')
+
+// Helper to get average of a measurement from a list of cells
+def getAvg = { cells, measurementName ->
+    def values = cells.collect { it.getMeasurementList().get(measurementName) }
+        .findAll { it != null && !Double.isNaN(it) }
+    return values ? (values.sum() as double) / values.size() : 0.0
+}
+
+// Helper to get average of a column across rows
+def getColAvg = { rows, key ->
+    def values = rows.collect { it[key] }.findAll { it != null && !Double.isNaN(it as double) }
+    return values ? (values.sum() as double) / values.size() : 0.0
+}
+
+def allResults = []
+
+for (def entry : projectEntries) {
+    print('Processing: ' + entry.getImageName())
+
+    def imageData = entry.readImageData()
+    if (imageData == null) {
+        print('  SKIPPED: Could not read image data.')
+        continue
+    }
+
+    def hierarchy = imageData.getHierarchy()
+    def detections = hierarchy.getDetectionObjects()
+    def annotations = hierarchy.getAnnotationObjects()
+
+    if (detections.isEmpty()) {
+        print('  SKIPPED: No detections found.')
+        continue
+    }
+
+    // Get background mean from background annotation (0 children)
+    def bgAnnotation = annotations.find { it.nChildObjects() == 0 }
+    if (bgAnnotation == null) {
+        print('  WARNING: No background annotation found.')
+        continue
+    }
+
+    double bgMean = bgAnnotation.getMeasurementList().get('ROI: 2.00 \u00b5m per pixel: 63: Mean') ?: 0.0
+    print('  Background 63 mean: ' + String.format('%.4f', bgMean))
+
+    // Filter cells by class
+    def cells63 = detections.findAll { it.getPathClass()?.toString() == '63' }
+    def cellsIba1 = detections.findAll { it.getPathClass()?.toString() == 'iba1' }
+    def cellsColoc = detections.findAll { it.getPathClass()?.toString() == '63: iba1' }
+    def cellsUnclassified = detections.findAll { it.getPathClass() == null || it.getPathClass().toString() == 'Unclassified' }
+
+    // Raw Cell: 63 mean for each class
+    double raw63_63mean = getAvg(cells63, 'Cell: 63 mean')
+    double rawIba1_63mean = getAvg(cellsIba1, 'Cell: 63 mean')
+    double rawColoc_63mean = getAvg(cellsColoc, 'Cell: 63 mean')
+    double rawUnc_63mean = getAvg(cellsUnclassified, 'Cell: 63 mean')
+    double rawAll_63mean = getAvg(detections, 'Cell: 63 mean')
+
+    // Background subtracted Cell: 63 mean for each class
+    double norm63_63mean = raw63_63mean - bgMean
+    double normIba1_63mean = rawIba1_63mean - bgMean
+    double normColoc_63mean = rawColoc_63mean - bgMean
+    double normUnc_63mean = rawUnc_63mean - bgMean
+    double normAll_63mean = rawAll_63mean - bgMean
+
+    print('  63 cells: raw=' + String.format('%.4f', raw63_63mean) + ' normalized=' + String.format('%.4f', norm63_63mean))
+    print('  iba1 cells: raw=' + String.format('%.4f', rawIba1_63mean) + ' normalized=' + String.format('%.4f', normIba1_63mean))
+    print('  coloc cells: raw=' + String.format('%.4f', rawColoc_63mean) + ' normalized=' + String.format('%.4f', normColoc_63mean))
+    print('  unclassified cells: raw=' + String.format('%.4f', rawUnc_63mean) + ' normalized=' + String.format('%.4f', normUnc_63mean))
+
+    allResults.add([
+        image: entry.getImageName(),
+        isControl: entry.getImageName().startsWith('NC'),
+        bgMean: bgMean,
+
+        num63: cells63.size(),
+        raw63_63mean: raw63_63mean,
+        norm63_63mean: norm63_63mean,
+
+        numIba1: cellsIba1.size(),
+        rawIba1_63mean: rawIba1_63mean,
+        normIba1_63mean: normIba1_63mean,
+
+        numColoc: cellsColoc.size(),
+        rawColoc_63mean: rawColoc_63mean,
+        normColoc_63mean: normColoc_63mean,
+
+        numUnclassified: cellsUnclassified.size(),
+        rawUnc_63mean: rawUnc_63mean,
+        normUnc_63mean: normUnc_63mean,
+
+        totalCells: detections.size(),
+        rawAll_63mean: rawAll_63mean,
+        normAll_63mean: normAll_63mean
+    ])
+}
+
+def controlResults = allResults.findAll { it.isControl }
+def experimentalResults = allResults.findAll { !it.isControl }
+
+def formatRow = { r ->
+    return r.image + ',' +
+        String.format('%.4f', r.bgMean as double) + ',' +
+        r.totalCells + ',' +
+        String.format('%.4f', r.rawAll_63mean as double) + ',' +
+        String.format('%.4f', r.normAll_63mean as double) + ',' +
+        r.num63 + ',' +
+        String.format('%.4f', r.raw63_63mean as double) + ',' +
+        String.format('%.4f', r.norm63_63mean as double) + ',' +
+        r.numIba1 + ',' +
+        String.format('%.4f', r.rawIba1_63mean as double) + ',' +
+        String.format('%.4f', r.normIba1_63mean as double) + ',' +
+        r.numColoc + ',' +
+        String.format('%.4f', r.rawColoc_63mean as double) + ',' +
+        String.format('%.4f', r.normColoc_63mean as double) + ',' +
+        r.numUnclassified + ',' +
+        String.format('%.4f', r.rawUnc_63mean as double) + ',' +
+        String.format('%.4f', r.normUnc_63mean as double)
+}
+
+def formatAvgRow = { label, rows ->
+    return label + ',' +
+        String.format('%.4f', getColAvg(rows, 'bgMean') as double) + ',' +
+        String.format('%.2f', getColAvg(rows, 'totalCells') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'rawAll_63mean') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'normAll_63mean') as double) + ',' +
+        String.format('%.2f', getColAvg(rows, 'num63') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'raw63_63mean') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'norm63_63mean') as double) + ',' +
+        String.format('%.2f', getColAvg(rows, 'numIba1') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'rawIba1_63mean') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'normIba1_63mean') as double) + ',' +
+        String.format('%.2f', getColAvg(rows, 'numColoc') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'rawColoc_63mean') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'normColoc_63mean') as double) + ',' +
+        String.format('%.2f', getColAvg(rows, 'numUnclassified') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'rawUnc_63mean') as double) + ',' +
+        String.format('%.4f', getColAvg(rows, 'normUnc_63mean') as double)
+}
+
+def header = 'Image,Background 63 Mean,' +
+    'Total Cells,Raw All Cells: 63 mean,Normalized All Cells: 63 mean,' +
+    'Num 63 Cells,Raw 63: 63 mean,Normalized 63: 63 mean,' +
+    'Num iba1 Cells,Raw iba1: 63 mean,Normalized iba1: 63 mean,' +
+    'Num Coloc Cells,Raw Coloc: 63 mean,Normalized Coloc: 63 mean,' +
+    'Num Unclassified Cells,Raw Unclassified: 63 mean,Normalized Unclassified: 63 mean'
+
+def csvFile = new File(outputDir, 'normalized_intensity.csv')
+csvFile.withWriter { writer ->
+    writer.writeLine(header)
+
+    writer.writeLine('--- Control Group (NC) ---')
+    for (def r : controlResults) {
+        writer.writeLine(formatRow(r))
+    }
+
+    writer.writeLine('--- Experimental Group ---')
+    for (def r : experimentalResults) {
+        writer.writeLine(formatRow(r))
+    }
+
+    writer.writeLine('')
+    writer.writeLine('--- Group Averages ---')
+    writer.writeLine(formatAvgRow('Control Average (NC)', controlResults))
+    writer.writeLine(formatAvgRow('Experimental Average', experimentalResults))
+}
+
+print('Done! Results saved to: ' + csvFile)
