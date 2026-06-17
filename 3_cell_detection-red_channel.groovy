@@ -36,7 +36,7 @@ for (def entry : projectEntries) {
         'qupath.imagej.detect.cells.WatershedCellDetection',
         imageData,
         '{"detectionImageBrightfield": "Hematoxylin OD",' +
-        '"detectionImage": "dapi (C1)",' +
+        '"detectionImage": "iba1",' +
         '"requestedPixelSizeMicrons": 0.5,' +
         '"backgroundRadiusMicrons": 8.0,' +
         '"backgroundByReconstruction": true,' +
@@ -44,7 +44,7 @@ for (def entry : projectEntries) {
         '"sigmaMicrons": 1.5,' +
         '"minAreaMicrons": 10.0,' +
         '"maxAreaMicrons": 400.0,' +
-        '"threshold": 100.0,' +
+        '"threshold": 800.0,' +
         '"splitByShape": true,' +
         '"cellExpansionMicrons": 3.0,' +
         '"includeNuclei": true,' +
