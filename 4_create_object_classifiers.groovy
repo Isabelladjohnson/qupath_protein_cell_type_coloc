@@ -25,7 +25,7 @@ def json63 = '''{
     "measurement": "Cell: 63 mean",
     "pathClassEquals": "63",
     "pathClassAbove": "63",
-    "threshold": 175.0
+    "threshold": 500.0
   },
   "pathClasses": [
     "63"
@@ -45,7 +45,7 @@ def jsonIba1 = '''{
     "measurement": "Cell: iba1 mean",
     "pathClassEquals": "iba1",
     "pathClassAbove": "iba1",
-    "threshold": 550.0
+    "threshold": 400.0
   },
   "pathClasses": [
     "iba1"
@@ -68,7 +68,7 @@ def jsonColoc = '''{
         "measurement": "Cell: 63 mean",
         "pathClassEquals": "63",
         "pathClassAbove": "63",
-        "threshold": 175.0
+        "threshold": 500.0
       },
       "pathClasses": [
         "63"
@@ -83,7 +83,7 @@ def jsonColoc = '''{
         "measurement": "Cell: iba1 mean",
         "pathClassEquals": "iba1",
         "pathClassAbove": "iba1",
-        "threshold": 550.0
+        "threshold": 400.0
       },
       "pathClasses": [
         "iba1"
