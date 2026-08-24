@@ -17,25 +17,25 @@ if (!classifiersDir.exists()) {
     print('Created classifiers directory.')
 }
 
-// Step 1: Create 63 single measurement classifier
-def json63 = '''{
+// Step 1: Create protein single measurement classifier
+def jsonProtein = '''{
   "object_classifier_type": "SimpleClassifier",
   "function": {
     "classifier_fun": "ClassifyByMeasurementFunction",
-    "measurement": "Cell: 63 mean",
-    "pathClassEquals": "63",
-    "pathClassAbove": "63",
+    "measurement": "Cell: protein mean",
+    "pathClassEquals": "protein",
+    "pathClassAbove": "protein",
     "threshold": 175.0
   },
   "pathClasses": [
-    "63"
+    "protein"
   ],
   "filter": "DETECTIONS_ALL",
   "timestamp": ''' + System.currentTimeMillis() + '''
 }'''
 
-new File(classifiersDir, '63.json').text = json63
-print('Created classifier: 63')
+new File(classifiersDir, 'protein.json').text = jsonProtein
+print('Created classifier: protein')
 
 // Step 2: Create iba1 single measurement classifier
 def jsonIba1 = '''{
@@ -57,7 +57,7 @@ def jsonIba1 = '''{
 new File(classifiersDir, 'iba1.json').text = jsonIba1
 print('Created classifier: iba1')
 
-// Step 3: Create composite classifier (coloc = 63 AND iba1)
+// Step 3: Create composite classifier (coloc = protein AND iba1)
 def jsonColoc = '''{
   "object_classifier_type": "CompositeClassifier",
   "classifiers": [
@@ -65,13 +65,13 @@ def jsonColoc = '''{
       "object_classifier_type": "SimpleClassifier",
       "function": {
         "classifier_fun": "ClassifyByMeasurementFunction",
-        "measurement": "Cell: 63 mean",
-        "pathClassEquals": "63",
-        "pathClassAbove": "63",
+        "measurement": "Cell: protein mean",
+        "pathClassEquals": "protein",
+        "pathClassAbove": "protein",
         "threshold": 175.0
       },
       "pathClasses": [
-        "63"
+        "protein"
       ],
       "filter": "DETECTIONS_ALL",
       "timestamp": ''' + System.currentTimeMillis() + '''
