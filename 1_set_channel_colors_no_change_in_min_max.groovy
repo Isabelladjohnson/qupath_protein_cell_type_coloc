@@ -34,7 +34,7 @@ for (def entry : projectEntries) {
 
     def newChannels = [
         qupath.lib.images.servers.ImageChannel.getInstance('dapi', qupath.lib.common.ColorTools.packRGB(0, 0, 255)),       // CH1 - Blue
-        qupath.lib.images.servers.ImageChannel.getInstance('63', qupath.lib.common.ColorTools.packRGB(0, 255, 0)),         // CH2 - Lime
+        qupath.lib.images.servers.ImageChannel.getInstance('protein', qupath.lib.common.ColorTools.packRGB(0, 255, 0)),     // CH2 - Lime
         qupath.lib.images.servers.ImageChannel.getInstance('iba1', qupath.lib.common.ColorTools.packRGB(255, 0, 0))        // CH3 - Red
     ]
 
@@ -43,7 +43,7 @@ for (def entry : projectEntries) {
         .build()
 
     server.setMetadata(newMetadata)
-    print('  Channels set: dapi (Blue), 63 (Lime), iba1 (Red).')
+    print('  Channels set: dapi (Blue), protein (Lime), iba1 (Red).')
 
     entry.saveImageData(imageData)
     print('  Saved.')
