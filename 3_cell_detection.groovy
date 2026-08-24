@@ -36,7 +36,7 @@ for (def entry : projectEntries) {
         'qupath.imagej.detect.cells.WatershedCellDetection',
         imageData,
         '{"detectionImageBrightfield": "Hematoxylin OD",' +
-        '"detectionImage": "protein",' +
+        '"detectionImage": "dapi",' +
         '"requestedPixelSizeMicrons": 0.5,' +
         '"backgroundRadiusMicrons": 8.0,' +
         '"backgroundByReconstruction": true,' +
