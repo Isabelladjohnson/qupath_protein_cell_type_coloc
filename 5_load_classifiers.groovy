@@ -1,4 +1,4 @@
-def classifierNames = ['63', 'iba1', 'coloc'] // apply classifiers from previous script
+def classifierNames = ['protein', 'iba1', 'coloc'] // apply classifiers from previous script
 // open project
 def project = getProject()
 if (project == null) {
