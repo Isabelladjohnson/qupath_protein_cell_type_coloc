@@ -75,11 +75,6 @@ for (def entry : projectEntries) { // for each image print its name, load it's d
         writer.writeLine('Num coloc,' + numColoc)
         writer.writeLine('Num unclassified,' + numUnclassified)
 
-        // Percentages
-        writer.writeLine('Percent protein,' + String.format('%.2f', numProtein / totalCells * 100.0))
-        writer.writeLine('Percent iba1,' + String.format('%.2f', numIba1 / totalCells * 100.0))
-        writer.writeLine('Percent coloc,' + String.format('%.2f', numColoc / totalCells * 100.0))
-
         // Per-cell intensity values, one row per detected cell in the image
         writer.writeLine('')
         writer.writeLine('Cell,Class,Cell: protein mean,Cell: protein min,Cell: protein max,Cell: iba1 mean,Cell: iba1 min,Cell: iba1 max')
