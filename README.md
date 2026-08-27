@@ -14,3 +14,4 @@ details for modifications within each script:
 
 Other notes:
 the hierarchy is QuPath's way to detecting images and cells inside each image and organizing it. So each image becomes a full image annotation, within that each cell is an object annotation nestled within the one image, this way we can pull the data from every cell in every image. 
+- Script 10 is set up to organize images based on their name with all control image names starting with 'NC' all images with any other sarting title will be classified as experimental.
