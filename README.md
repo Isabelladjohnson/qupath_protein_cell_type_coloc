@@ -7,6 +7,7 @@ First open QuPath and create the project, import all the files. The run the scri
 4. create_object_classifiers.groovy (set thresholds here)
 5. load_classifiers.groovy
 6. 6. add_intensity_calculation_and_export.groovy (exports the min, max, and mean channel intensity value for every cell in each image to a csv file).
+7. export_mean_cell_count_and_channel_intensities.groovy (exports the number of cells in each image and the mean channel intensities for each image organised by classification).
 clear_all_previous.groovy (clears all previous data. MUST be run between everything you edit values/thresholds to any of the scripts, then re-run the entire pipeline).
 
 details for modifications within each script:
