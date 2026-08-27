@@ -22,13 +22,13 @@ for (def entry : projectEntries) {
     }
 
     // Step 1: Create full image annotation
-    def hierarchy = imageData.getHierarchy()
+    def hierarchy = imageData.getHierarchy() // use QuPath's PathObjectHierarchy data strcture to get each image, its annotations, cell detections, and organization.
     def server = imageData.getServer()
     def fullAnnotation = qupath.lib.objects.PathObjects.createAnnotationObject(
         qupath.lib.roi.ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(), qupath.lib.regions.ImagePlane.getDefaultPlane())
-    )
-    hierarchy.addObject(fullAnnotation)
-    hierarchy.getSelectionModel().setSelectedObject(fullAnnotation)
+    ) // creaet a full imaeg annotation 
+    hierarchy.addObject(fullAnnotation) // add the full image annotation to the heirarchy  
+    hierarchy.getSelectionModel().setSelectedObject(fullAnnotation) //select the ull imaeg annotation. 
     print('  Created full image annotation.')
 
     // Step 2: Run cell detection with specified parameters
