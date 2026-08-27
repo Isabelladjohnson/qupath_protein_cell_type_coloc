@@ -12,4 +12,5 @@ clear_all_previous.groovy (clears all previous data. MUST be run between everyth
 details for modifications within each script:
 4_create_object_classifiers: lines 25 and 45 are where to set the measurement type such as channel, mean vs minimum value, and area such as entire cell or nucleus of cell. Lines 28 and 48 are where to select the threshold. Lines 33, 53, 6, 91 is where you select object filter as all detections, cells, or tiles.
 
-6_add_intensity_features: 
+Other notes:
+the hierarchy is QuPath's way to detecting images and cells inside each image and organizing it. So each image becomes a full image annotation, within that each cell is an object annotation nestled within the one image, this way we can pull the data from every cell in every image. 
