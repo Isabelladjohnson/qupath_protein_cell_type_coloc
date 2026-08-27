@@ -27,13 +27,13 @@ def getColAvg = { rows, key ->
 }
 
 // The two channels/markers and two measurement compartments we want intensity stats for.
-// Channel names stay exactly as used everywhere else in the pipeline: '153' and 'iba1'.
-def CHANNELS = ['153', 'iba1']
+// Channel names stay exactly as used everywhere else in the pipeline: 'protein' and 'iba1'.
+def CHANNELS = ['protein', 'iba1']
 def COMPARTMENTS = ['Cell', 'Nucleus']
 def STATS = ['mean']
 
 // Build the ordered list of QuPath measurement names we'll average for every category,
-// e.g. 'Cell: 153 mean', 'Cell: iba1 mean', 'Nucleus: 153 mean', 'Nucleus: iba1 mean'
+// e.g. 'Cell: protein mean', 'Cell: iba1 mean', 'Nucleus: protein mean', 'Nucleus: iba1 mean'
 // (min/max dropped to keep the output manageable - only mean is pulled now)
 def MEASUREMENT_KEYS = []
 COMPARTMENTS.each { compartment ->
@@ -68,20 +68,20 @@ for (def entry : projectEntries) {
     // Define the 5 categories for this image. 
     def categories = [
         'All'         : detections, // all cells detected
-        '153'         : detections.findAll { it.getPathClass()?.toString() == '153' }, // cells detected as only 153 + 
+        'protein'         : detections.findAll { it.getPathClass()?.toString() == 'protein' }, // cells detected as only protein + 
         'iba1'        : detections.findAll { it.getPathClass()?.toString() == 'iba1' }, // cells detecetd as only iba1 +
-        'coloc'       : detections.findAll { it.getPathClass()?.toString() == '153: iba1' }, // colocalized cells detected to have both iba1 and 153
+        'coloc'       : detections.findAll { it.getPathClass()?.toString() == 'protein: iba1' }, // colocalized cells detected to have both iba1 and protein
         'Unclassified': detections.findAll { it.getPathClass() == null || it.getPathClass().toString() == 'Unclassified' } // all other cells
     ]
 
-    print('  All: ' + detections.size() + '  153: ' + categories['153'].size() + '  iba1: ' + categories['iba1'].size() +
+    print('  All: ' + detections.size() + '  protein: ' + categories['protein'].size() + '  iba1: ' + categories['iba1'].size() +
         '  coloc: ' + categories['coloc'].size() + '  unclassified: ' + categories['Unclassified'].size()) // print a one line summary of the class counts for this image
 
     def isControl = entry.getImageName().startsWith('NC') // if the image name starts with 'NC' label it as 'Control'
     def group = isControl ? 'Control' : 'Experimental' // every other imaeg is 'Experimental'
 
     // Build one row per category for this image: image name, group, category label, cell count,
-    // then the Cell:/Nucleus: x 153/iba1 mean average for that category's cells.
+    // then the Cell:/Nucleus: x protein/iba1 mean average for that category's cells.
     categories.each { categoryName, cells ->
         def row = [
             image   : entry.getImageName(),
@@ -137,9 +137,9 @@ csvFile.withWriter { writer ->
     // Group averages: for each group (Control/Experimental) x each of the 5 categories,
     // average the count and every intensity measurement across that group's images.
     writer.writeLine('') // leave one row blank
-    // 'Group Averages' title in column A, with the same column labels as the header (Group, Category, Count, Cell: 153 mean, ...) repeated in columns B-H for easy reference
+    // 'Group Averages' title in column A, with the same column labels as the header (Group, Category, Count, Cell: protein mean, ...) repeated in columns B-H for easy reference
     writer.writeLine((['--- Group Averages ---', 'Group', 'Category', 'Count'] + MEASUREMENT_KEYS).join(','))
-    def categoryNames = ['All', '153', 'iba1', 'coloc', 'Unclassified']
+    def categoryNames = ['All', 'protein', 'iba1', 'coloc', 'Unclassified']
     def groupMarkers = ['Control': '--- Control Group (NC) ---', 'Experimental': '--- Experimental Group ---']
     ['Control', 'Experimental'].each { grp ->
         writer.writeLine(groupMarkers[grp]) // same Control/Experimental section marker style as the rows above
