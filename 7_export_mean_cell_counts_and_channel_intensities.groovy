@@ -27,11 +27,11 @@ def getColAvg = { rows, key ->
 }
 
 // The two channels/markers we want intensity stats for. Only the 'Cell' compartment this time - no Nucleus columns.
-def CHANNELS = ['153', 'iba1']
+def CHANNELS = ['protein', 'iba1']
 def COMPARTMENTS = ['Cell']
 def STATS = ['mean']
 
-// Build the ordered list of QuPath measurement names we'll average for every category: 'Cell: 153 mean', 'Cell: iba1 mean'
+// Build the ordered list of QuPath measurement names we'll average for every category: 'Cell: protein mean', 'Cell: iba1 mean'
 def MEASUREMENT_KEYS = []
 COMPARTMENTS.each { compartment ->
     CHANNELS.each { channel ->
@@ -64,19 +64,19 @@ for (def entry : projectEntries) {
     // Define the 5 categories for this image. 'All' is every detected cell regardless of class.
     def categories = [
         'All'         : detections,
-        '153'         : detections.findAll { it.getPathClass()?.toString() == '153' },
+        'protein'         : detections.findAll { it.getPathClass()?.toString() == 'protein' },
         'iba1'        : detections.findAll { it.getPathClass()?.toString() == 'iba1' },
-        'coloc'       : detections.findAll { it.getPathClass()?.toString() == '153: iba1' },
+        'coloc'       : detections.findAll { it.getPathClass()?.toString() == 'protein: iba1' },
         'Unclassified': detections.findAll { it.getPathClass() == null || it.getPathClass().toString() == 'Unclassified' }
     ]
 
-    print('  All: ' + detections.size() + '  153: ' + categories['153'].size() + '  iba1: ' + categories['iba1'].size() +
+    print('  All: ' + detections.size() + '  protein: ' + categories['protein'].size() + '  iba1: ' + categories['iba1'].size() +
         '  coloc: ' + categories['coloc'].size() + '  unclassified: ' + categories['Unclassified'].size()) // one line summary of class counts for this image
 
     def isControl = entry.getImageName().startsWith('NC') // 'NC' filenames are Control
     def group = isControl ? 'Control' : 'Experimental'
 
-    // Build one row per category for this image: image name, group, category label, cell count, then Cell: 153 mean and Cell: iba1 mean
+    // Build one row per category for this image: image name, group, category label, cell count, then Cell: protein mean and Cell: iba1 mean
     categories.each { categoryName, cells ->
         def row = [
             image   : entry.getImageName(),
@@ -130,10 +130,10 @@ csvFile.withWriter { writer ->
     }
 
     // Group averages: for each group (Control/Experimental) x each of the 5 categories,
-    // average the count and Cell: 153/iba1 mean across that group's images.
+    // average the count and Cell: protein/iba1 mean across that group's images.
     writer.writeLine('') // leave one row blank
     writer.writeLine((['--- Group Averages ---', 'Group', 'Category', 'Count'] + MEASUREMENT_KEYS).join(','))
-    def categoryNames = ['All', '153', 'iba1', 'coloc', 'Unclassified']
+    def categoryNames = ['All', 'protein', 'iba1', 'coloc', 'Unclassified']
     def groupMarkers = ['Control': '--- Control Group (NC) ---', 'Experimental': '--- Experimental Group ---']
 
     // Remember each group's average count per category as we go, so the percentage section below
@@ -150,18 +150,18 @@ csvFile.withWriter { writer ->
     }
 
     // Percent composition per group: each classified category's average count as a percentage of
-    // that group's average 'All' (total) cell count. E.g. % 153 (Control) = Control avg 153 count / Control avg All count * 100
+    // that group's average 'All' (total) cell count. E.g. % protein (Control) = Control avg protein count / Control avg All count * 100
     writer.writeLine('') // leave one row blank
     writer.writeLine('--- Percent Composition ---')
-    writer.writeLine('Group,% 153,% iba1,% coloc,% Unclassified')
+    writer.writeLine('Group,% protein,% iba1,% coloc,% Unclassified')
     ['Control', 'Experimental'].each { grp ->
         def allAvg = avgCounts[grp]['All']
-        def pct153 = allAvg ? (avgCounts[grp]['153'] / allAvg * 100.0) : 0.0
+        def pctProtein = allAvg ? (avgCounts[grp]['protein'] / allAvg * 100.0) : 0.0
         def pctIba1 = allAvg ? (avgCounts[grp]['iba1'] / allAvg * 100.0) : 0.0
         def pctColoc = allAvg ? (avgCounts[grp]['coloc'] / allAvg * 100.0) : 0.0
         def pctUnc = allAvg ? (avgCounts[grp]['Unclassified'] / allAvg * 100.0) : 0.0
         writer.writeLine(grp + ',' +
-            String.format('%.2f', pct153 as double) + ',' +
+            String.format('%.2f', pctProtein as double) + ',' +
             String.format('%.2f', pctIba1 as double) + ',' +
             String.format('%.2f', pctColoc as double) + ',' +
             String.format('%.2f', pctUnc as double))
